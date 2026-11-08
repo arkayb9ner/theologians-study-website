@@ -33,6 +33,21 @@ a{color:var(--burg)}
 .continue{background:var(--burg);color:#fff;border-radius:var(--radius);padding:20px 22px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;margin:18px 0 28px}
 .continue h2{margin:0 0 4px;font-size:26px;color:#fff}
 .continue p{margin:0;opacity:.9;font-size:14px;max-width:560px}
+.start-path{background:var(--card);border:1px solid var(--gold);border-radius:var(--radius);padding:22px;margin:14px 0 20px}
+.start-path h2{font-size:32px;margin:0 0 4px}
+.start-path .start-intro{margin:0 0 16px;color:var(--muted);font-size:15px;max-width:640px}
+.start-steps{display:flex;flex-direction:column;gap:10px}
+.start-step{appearance:none;width:100%;display:flex;align-items:center;gap:16px;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:16px;min-height:76px;cursor:pointer;color:var(--ink);font-family:inherit}
+.start-step:active{background:var(--bg2)}
+.start-step:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.start-step .num{width:44px;height:44px;flex-shrink:0;border-radius:50%;border:1.5px solid var(--gold);display:grid;place-items:center;font-weight:700;font-size:17px;color:var(--burg);background:var(--gold-light)}
+.start-step .start-main{flex:1;display:flex;flex-direction:column;gap:1px;min-width:0}
+.start-step .start-q{font-family:"EB Garamond",Georgia,serif;font-size:22px;font-weight:700;line-height:1.2}
+.start-step .start-lesson{font-size:14px;font-weight:600;color:var(--ink)}
+.start-step .start-theo{font-size:13px;color:var(--muted)}
+.start-step .st{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}
+.start-step .chev{font-size:22px;color:var(--muted);flex-shrink:0;line-height:1}
+@media(max-width:640px){ .start-path{padding:18px 14px} .start-step{gap:12px;padding:14px} .start-step .start-q{font-size:20px} .start-step .st{display:none} }
 .btn{appearance:none;border:0;cursor:pointer;border-radius:999px;padding:11px 18px;font-weight:700;font-size:14px;background:var(--gold);color:#1c1917}
 .btn.secondary{background:var(--card);color:var(--ink);border:1px solid var(--line)}
 .btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
@@ -143,6 +158,12 @@ footer{margin-top:36px;color:var(--muted);font-size:13px;text-align:center}
     </div>
   </header>
 
+  <section class="start-path" id="startPath" aria-label="Start here">
+    <h2>Start here</h2>
+    <p class="start-intro">New to theology? Walk this path — five lessons, in order, from who Jesus is to how to pray.</p>
+    <div class="start-steps" id="startSteps" role="list" aria-label="Start here — five lessons in order"></div>
+  </section>
+
   <section class="continue" id="continueBox">
     <div><h2 id="continueTitle">Continue your study</h2><p id="continueText">Start with Athanasius — the defender of the Incarnation — or pick any voice from the shelf below.</p></div>
     <button class="btn" id="continueBtn">Start studying →</button>
@@ -244,8 +265,27 @@ function allTheo(){return DATA.concat(state.custom||[]);}
 function progress(t){var total=t.lessons?t.lessons.length:0; if(!total) return 0; var done=t.lessons.filter(function(_,i){return state.done[t.id+"-"+i]}).length; return Math.round(done/total*100);}
 function overall(){var ts=allTheo(); var tot=0,d=0; ts.forEach(function(t){if(t.lessons){tot+=t.lessons.length; t.lessons.forEach(function(_,i){if(state.done[t.id+"-"+i])d++});}}); return tot?Math.round(d/tot*100):0;}
 var filter="all", query="";
+var START_PATH=[
+ {q:"Who is Jesus?",theoId:"athanasius",lessonIdx:0,lessonTitle:"The Crisis: Who Is Jesus, Really?",theoName:"St. Athanasius of Alexandria"},
+ {q:"Why did God become man?",theoId:"athanasius",lessonIdx:1,lessonTitle:"The Word Became Flesh: On the Incarnation",theoName:"St. Athanasius of Alexandria"},
+ {q:"How are we saved?",theoId:"augustine",lessonIdx:1,lessonTitle:"Original Sin and the Necessity of Grace",theoName:"St. Augustine of Hippo"},
+ {q:"How do we know God is real?",theoId:"aquinas",lessonIdx:1,lessonTitle:"The Five Ways",theoName:"St. Thomas Aquinas"},
+ {q:"How do I pray?",theoId:"teresa",lessonIdx:1,lessonTitle:"Mental Prayer: A Close Sharing Between Friends",theoName:"St. Teresa of Ávila"}
+];
+function renderStartPath(){
+ var box=document.getElementById("startSteps"); if(!box) return; box.innerHTML="";
+ START_PATH.forEach(function(s,i){
+   var dn=!!state.done[s.theoId+"-"+s.lessonIdx];
+   var b=document.createElement("button"); b.type="button"; b.className="start-step";
+   b.setAttribute("aria-label","Step "+(i+1)+": "+s.q+" — "+s.lessonTitle+" by "+s.theoName+(dn?" (read)":""));
+   b.innerHTML='<span class="num" aria-hidden="true">'+(i+1)+'</span><span class="start-main"><span class="start-q">'+esc(s.q)+'</span><span class="start-lesson">'+esc(s.lessonTitle)+'</span><span class="start-theo">'+esc(s.theoName)+'</span></span>'+(dn?'<span class="st">✓ Read</span>':'')+'<span class="chev" aria-hidden="true">›</span>';
+   b.onclick=function(){openTheo(s.theoId,s.lessonIdx);};
+   box.appendChild(b);
+ });
+}
 function render(){
  document.getElementById("overallPill").textContent=overall()+"% complete";
+ renderStartPath();
  var grid=document.getElementById("grid"); grid.innerHTML="";
  allTheo().filter(function(t){return (filter==="all"||t.era===filter) && (t.name+" "+t.role+" "+t.intro).toLowerCase().includes(query.toLowerCase());}).forEach(function(t){
    var pct=progress(t); var el=document.createElement("article"); el.className="card";
